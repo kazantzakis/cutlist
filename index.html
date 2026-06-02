@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CutList Optimizer</title>
+<style>
+:root {
+  --body-bg: #263238;
+  --text-color: #eceff1;
+  --header-bg: #37474f;
+  --header-border: #455a64;
+  --header-logo-fill: #80cbc4;
+  --header-logo-text: #fff;
+  --sidebar-bg: #2b3a42;
+  --section-border: #455a64;
+  --section-header-bg: #313f48;
+  --section-header-text: #b0bec5;
+  --section-header-hover: #364851;
+  --arrow-color: #80cbc4;
+  --table-header-bg: #37474f;
+  --table-header-text: #90a4ae;
+  --table-input-bg: #37474f;
+  --table-input-border: #546e7a;
+  --table-input-text: #eceff1;
+  --table-row-hover: rgba(255,255,255,.04);
+  --resize-handle-bg: #37474f;
+  --resize-handle-active: #26a69a;
+  --right-panel-bg: #2b3a42;
+  --right-panel-border: #455a64;
+  --btn-default-bg: #546e7a;
+  --btn-default-text: #fff;
+  --btn-default-hover: #607d8b;
+  --sheet-nav-btn-bg: #37474f;
+  --sheet-nav-btn-hover: #455a64;
+  --sheet-nav-text: #b0bec5;
+  --stats-label: #90a4ae;
+  --stats-value: #eceff1;
+  --stats-sub: #78909c;
+  --status-bg: #37474f;
+  --status-border: #546e7a;
+  --toggle-slider-bg: #546e7a;
+  --toggle-slider-checked: #26a69a;
+  --option-label: #b0bec5;
+  --option-input-bg: #37474f;
+  --option-input-border: #546e7a;
+  --option-input-text: #eceff1;
+  --input-focus-border: #26a69a;
+  --canvas-bg: #1a2329;
+  --row-action-color: #90a4ae;
+  --row-action-hover-bg: rgba(255,255,255,.1);
+  --row-action-hover-color: #fff;
+  --spinner-border: #546e7a;
+  --spinner-top-color: #26a69a;
+  --no-fit-header: #ef5350;
+  --no-fit-cell-border: #455a64;
+  --no-fit-text: #ef9a9a;
+  --cuts-header: #80cbc4;
+  --cuts-cell-border: #37474f;
+  --cuts-row-hover: rgba(255,255,255,.04);
+}
+
+.light-theme {
+  --body-bg: #f5f5f5;
+  --text-color: #333;
+  --header-bg: #fff;
+  --header-border: #e0e0e0;
+  --header-logo-fill: #26a69a;
+  --header-logo-text: #333;
+  --sidebar-bg: #fff;
+  --section-border: #e0e0e0;
+  --section-header-bg: #fafafa;
+  --section-header-text: #666;
+  --section-header-hover: #f0f0f0;
+  --arrow-color: #26a69a;
+  --table-header-bg: #f5f5f5;
+  --table-header-text: #666;
+  --table-input-bg: #fff;
+  --table-input-border: #ccc;
+  --table-input-text: #333;
+  --table-row-hover: rgba(0,0,0,.04);
+  --resize-handle-bg: #e0e0e0;
+  --resize-handle-active: #26a69a;
+  --right-panel-bg: #fff;
+  --right-panel-border: #e0e0e0;
+  --btn-default-bg: #e0e0e0;
+  --btn-default-text: #333;
+  --btn-default-hover: #d0d0d0;
+  --sheet-nav-btn-bg: #e0e0e0;
+  --sheet-nav-btn-hover: #ccc;
+  --sheet-nav-text: #666;
+  --stats-label: #999;
+  --stats-value: #333;
+  --stats-sub: #999;
+  --status-bg: #fff;
+  --status-border: #26a69a;
+  --toggle-slider-bg: #ccc;
+  --toggle-slider-checked: #26a69a;
+  --option-label: #666;
+  --option-input-bg: #fff;
+  --option-input-border: #ccc;
+  --option-input-text: #333;
+  --input-focus-border: #26a69a;
+  --canvas-bg: #e0e0e0;
+  --row-action-color: #999;
+  --row-action-hover-bg: rgba(0,0,0,.1);
+  --row-action-hover-color: #333;
+  --spinner-border: #ccc;
+  --spinner-top-color: #26a69a;
+  --no-fit-header: #ef5350;
+  --no-fit-cell-border: #e0e0e0;
+  --no-fit-text: #c62828;
+  --cuts-header: #26a69a;
+  --cuts-cell-border: #e0e0e0;
+  --cuts-row-hover: rgba(0,0,0,.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--body-bg); color: var(--text-color); height: 100vh; overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: background .2s, color .2s;
+}
+input, select, button, textarea { font-family: inherit; font-size: inherit; }
+
+/* Header */
+#header {
+  background: var(--header-bg); border-bottom: 2px solid var(--header-border); padding: 8px 16px;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0; z-index: 10;
+  transition: background .2s, border-color .2s;
+}
+#header .logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; color: var(--header-logo-text); }
+#header .logo svg { width: 28px; height: 28px; fill: var(--header-logo-fill); transition: fill .2s; }
+.header-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+  border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;
+  white-space: nowrap; transition: background .15s, opacity .15s;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-primary { background: #26a69a; color: #fff; }
+.btn-primary:hover:not(:disabled) { background: #2bbbad; }
+.btn-default { background: var(--btn-default-bg); color: var(--btn-default-text); }
+.btn-default:hover:not(:disabled) { background: var(--btn-default-hover); }
+.btn-success { background: #66bb6a; color: #fff; }
+.btn-success:hover:not(:disabled) { background: #81c784; }
+.btn-danger { background: #ef5350; color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #e57373; }
+.btn-sm { padding: 3px 8px; font-size: 12px; }
+
+/* Main layout */
+#main { display: flex; flex: 1; overflow: hidden; }
+#sidebar {
+  width: var(--sidebar-width, 380px); min-width: 260px; max-width: 600px;
+  background: var(--sidebar-bg); overflow-y: auto; flex-shrink: 0;
+  transition: background .2s;
+}
+#sidebar-resize-handle {
+  width: 6px; cursor: col-resize; flex-shrink: 0;
+  background: var(--resize-handle-bg); transition: background .1s; position: relative; z-index: 5;
+}
+#sidebar-resize-handle:hover, #sidebar-resize-handle.active {
+  background: var(--resize-handle-active);
+}
+#content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+#canvas-area { flex: 1; display: flex; overflow: auto; min-height: 0; }
+#svg-canvas { flex: 1; min-height: 300px; }
+#right-panel {
+  width: 340px; min-width: 340px; background: var(--right-panel-bg); overflow-y: auto;
+  border-left: 2px solid var(--right-panel-border); flex-shrink: 0; display: none;
+  transition: background .2s, border-color .2s;
+}
+#right-panel.show { display: block; }
+
+/* Sidebar sections */
+.section { border-bottom: 1px solid var(--section-border); transition: border-color .2s; }
+.section-header {
+  padding: 10px 14px; font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  user-select: none; background: var(--section-header-bg); color: var(--section-header-text);
+  transition: background .2s, color .2s;
+}
+.section-header:hover { background: var(--section-header-hover); }
+.section-header svg { fill: var(--arrow-color); transition: fill .2s; }
+.section-header .arrow { margin-left: auto; transition: transform .2s; }
+.section-header .arrow.collapsed { transform: rotate(-90deg); }
+.section-body { padding: 10px 14px; }
+.section-body.hidden { display: none; }
+
+/* Tables */
+table.input-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.input-table th {
+  background: var(--table-header-bg); padding: 4px 4px; text-align: left; font-size: 11px;
+  font-weight: 700; color: var(--table-header-text); white-space: nowrap;
+  transition: background .2s, color .2s;
+}
+table.input-table td { padding: 2px 2px; vertical-align: middle; }
+table.input-table tr:hover td { background: var(--table-row-hover); }
+table.input-table input, table.input-table select {
+  width: 100%; background: var(--table-input-bg); border: 1px solid var(--table-input-border); border-radius: 3px;
+  padding: 4px 4px; color: var(--table-input-text); font-size: 12px; outline: none;
+  transition: background .2s, border-color .2s, color .2s;
+}
+table.input-table input:focus { border-color: var(--input-focus-border); }
+table.input-table input[type=number] { text-align: right; }
+
+.row-actions { display: flex; gap: 2px; }
+.row-actions button {
+  background: none; border: none; cursor: pointer; color: var(--row-action-color); padding: 2px;
+  font-size: 16px; line-height: 1; border-radius: 3px;
+  transition: color .2s, background .2s;
+}
+.row-actions button:hover { color: var(--row-action-hover-color); background: var(--row-action-hover-bg); }
+.row-actions button.del:hover { color: var(--no-fit-header); }
+
+/* Options */
+.option-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.option-row label { color: var(--option-label); cursor: pointer; transition: color .2s; }
+.toggle {
+  position: relative; width: 40px; height: 22px; flex-shrink: 0; cursor: pointer;
+}
+.toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute; inset: 0; background: var(--toggle-slider-bg); border-radius: 11px; transition: background .2s;
+}
+.toggle .slider::before {
+  content: ''; position: absolute; width: 18px; height: 18px; left: 2px; bottom: 2px;
+  background: #fff; border-radius: 50%; transition: transform .2s;
+}
+.toggle input:checked + .slider { background: var(--toggle-slider-checked); }
+.toggle input:checked + .slider::before { transform: translateX(18px); }
+.option-row input[type=number] {
+  width: 60px; background: var(--option-input-bg); border: 1px solid var(--option-input-border); border-radius: 3px;
+  padding: 4px 6px; color: var(--option-input-text); font-size: 12px; text-align: right; outline: none;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.option-row input[type=number]:focus { border-color: var(--input-focus-border); }
+.option-row select {
+  background: var(--option-input-bg); border: 1px solid var(--option-input-border); border-radius: 3px;
+  padding: 4px 6px; color: var(--option-input-text); font-size: 12px; outline: none; width: 100px;
+  transition: background .2s, border-color .2s, color .2s;
+}
+
+/* SVG canvas */
+#svg-canvas { background: var(--canvas-bg); border-radius: 6px; display: flex; transition: background .2s; }
+#svg-canvas svg { display: block; width: 100%; height: 100%; }
+
+/* Results */
+.stats-grid { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 12px; }
+.stats-grid .label { color: var(--stats-label); transition: color .2s; }
+.stats-grid .value { text-align: right; font-weight: 600; color: var(--stats-value); transition: color .2s; }
+.stats-grid .sub { font-size: 11px; color: var(--stats-sub); font-weight: 400; transition: color .2s; }
+
+.sheet-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.sheet-nav button {
+  background: var(--sheet-nav-btn-bg); border: none; color: var(--btn-default-text); width: 28px; height: 28px;
+  border-radius: 50%; cursor: pointer; font-size: 16px; display: flex;
+  align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.sheet-nav button:hover { background: var(--sheet-nav-btn-hover); }
+.sheet-nav span { font-size: 13px; color: var(--sheet-nav-text); transition: color .2s; }
+
+.no-fit-panel { margin-top: 12px; }
+.no-fit-panel h4 { color: var(--no-fit-header); font-size: 13px; margin-bottom: 6px; }
+.no-fit-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.no-fit-table th { text-align: left; color: var(--stats-label); padding: 2px 4px; border-bottom: 1px solid var(--no-fit-cell-border); transition: color .2s, border-color .2s; }
+.no-fit-table td { padding: 2px 4px; color: var(--no-fit-text); transition: color .2s; }
+
+.cuts-section { margin-top: 12px; }
+.cuts-section h4 { color: var(--cuts-header); font-size: 13px; margin-bottom: 6px; transition: color .2s; }
+.cuts-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.cuts-table th { text-align: left; color: var(--stats-label); padding: 2px 4px; border-bottom: 1px solid var(--no-fit-cell-border); white-space: nowrap; transition: color .2s, border-color .2s; }
+.cuts-table td { padding: 2px 4px; border-bottom: 1px solid var(--cuts-cell-border); white-space: nowrap; transition: border-color .2s; }
+.cuts-table tr:hover td { background: var(--cuts-row-hover); }
+
+/* Messages */
+#status-message {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
+  background: var(--status-bg); border: 1px solid var(--status-border); border-radius: 8px;
+  padding: 16px 24px; z-index: 100; display: none; align-items: center; gap: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  transition: background .2s, border-color .2s;
+}
+#status-message.show { display: flex; }
+.spinner {
+  width: 20px; height: 20px; border: 3px solid var(--spinner-border); border-top-color: var(--spinner-top-color);
+  border-radius: 50%; animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty state */
+#svg-canvas:empty, #svg-canvas:has(.empty-state) { display: flex; align-items: center; justify-content: center; }
+.empty-state { color: var(--stats-sub); font-size: 14px; text-align: center; }
+
+/* Stats section titles */
+#overall-stats h4, #sheet-stats h4 { color: var(--cuts-header); font-size: 13px; margin-bottom: 8px; transition: color .2s; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  #sidebar { width: 100%; min-width: 0; max-height: 50vh; border-right: none; border-bottom: 2px solid var(--section-border); }
+  #main { flex-direction: column; }
+  #right-panel { width: 100%; min-width: 0; border-left: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    CutList Optimizer
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" id="btn-calculate" onclick="calculate()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Calculate
+    </button>
+    <button class="btn btn-sm btn-default" onclick="saveToLocalStorage()">Save</button>
+    <button class="btn btn-sm btn-default" onclick="loadFromLocalStorage()">Load</button>
+    <button class="btn btn-sm btn-default" onclick="resetAll()">Reset</button>
+  </div>
+</div>
+
+<div id="status-message"><div class="spinner"></div><span id="status-text">Calculating...</span></div>
+
+<div id="main">
+  <!-- Left Sidebar -->
+  <div id="sidebar">
+    <!-- Panels Input -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Panels
+        <span class="arrow">▼</span>
+      </div>
+      <div class="section-body" id="panels-body">
+        <table class="input-table">
+          <thead><tr>
+            <th style="width:52px">Width</th>
+            <th style="width:52px">Height</th>
+            <th style="width:36px">Qty</th>
+            <th style="width:56px">Label</th>
+            <th style="width:52px">Material</th>
+            <th style="width:40px">Rot</th>
+            <th style="width:20px"></th>
+          </tr></thead>
+          <tbody id="panels-tbody">
+          </tbody>
+        </table>
+        <button class="btn btn-sm btn-default" style="margin-top:6px" onclick="addPanelRow()">+ Add Panel</button>
+        <button class="btn btn-sm btn-default" style="margin-top:6px;margin-left:4px" onclick="addSamplePanels()">Sample</button>
+      </div>
+    </div>
+
+    <!-- Stock Input -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+        Stock Sheets
+        <span class="arrow">▼</span>
+      </div>
+      <div class="section-body" id="stock-body">
+        <table class="input-table">
+          <thead><tr>
+            <th style="width:52px">Width</th>
+            <th style="width:52px">Height</th>
+            <th style="width:36px">Qty</th>
+            <th style="width:56px">Label</th>
+            <th style="width:20px"></th>
+          </tr></thead>
+          <tbody id="stock-tbody">
+          </tbody>
+        </table>
+        <button class="btn btn-sm btn-default" style="margin-top:6px" onclick="addStockRow()">+ Add Stock</button>
+        <button class="btn btn-sm btn-default" style="margin-top:6px;margin-left:4px" onclick="addSampleStock()">Sample</button>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+        Options
+        <span class="arrow collapsed">▼</span>
+      </div>
+      <div class="section-body hidden" id="options-body">
+        <div class="option-row">
+          <label>Cut Thickness (kerf)</label>
+          <input type="number" id="opt-kerf" value="3" min="0" step="1">
+        </div>
+        <div class="option-row">
+          <label>Show Labels</label>
+          <label class="toggle"><input type="checkbox" id="opt-labels" checked onchange="toggleLabels()"><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Show Dimensions</label>
+          <label class="toggle"><input type="checkbox" id="opt-dimensions" onchange="toggleDimensions()"><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Enable Materials</label>
+          <label class="toggle"><input type="checkbox" id="opt-materials"><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Edge Banding</label>
+          <label class="toggle"><input type="checkbox" id="opt-edgeband"><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Dark Theme</label>
+          <label class="toggle"><input type="checkbox" id="opt-theme" checked onchange="toggleTheme()"><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Group Identical Sheets</label>
+          <label class="toggle"><input type="checkbox" id="opt-group" checked><span class="slider"></span></label>
+        </div>
+        <div class="option-row">
+          <label>Optimization Priority</label>
+          <select id="opt-priority">
+            <option value="material">Material Usage</option>
+            <option value="cuts">Fewer Cuts</option>
+            <option value="balance" selected>Balanced</option>
+          </select>
+        </div>
+        <div class="option-row">
+          <label>Units</label>
+          <select id="opt-units" onchange="toggleUnits()">
+            <option value="mm">mm</option>
+            <option value="cm">cm</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-resize-handle"></div>
+
+  <!-- Canvas -->
+  <div id="content">
+    <div id="canvas-area">
+      <div id="svg-canvas"></div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div id="right-panel">
+    <div style="padding:14px;overflow-y:auto;height:100%">
+      <!-- Sheet navigation -->
+      <div class="sheet-nav" id="sheet-nav" style="display:none">
+        <button onclick="prevSheet()">‹</button>
+        <span id="sheet-indicator">1 / 1</span>
+        <button onclick="nextSheet()">›</button>
+      </div>
+
+      <!-- Overall stats -->
+      <div id="overall-stats" style="display:none">
+        <h4 style="font-size:13px;margin-bottom:8px">Overall Statistics</h4>
+        <div class="stats-grid" id="stats-grid"></div>
+      </div>
+
+      <!-- Sheet stats -->
+      <div id="sheet-stats" style="display:none;margin-top:16px">
+        <h4 style="font-size:13px;margin-bottom:8px">Sheet Details</h4>
+        <div class="stats-grid" id="sheet-stats-grid"></div>
+      </div>
+
+      <!-- No fit panels -->
+      <div id="no-fit-section" style="display:none" class="no-fit-panel">
+        <h4>⚠ Unable to Fit</h4>
+        <table class="no-fit-table"><thead><tr><th>Panel</th><th>Label</th><th>Qty</th></tr></thead><tbody id="no-fit-body"></tbody></table>
+      </div>
+
+      <!-- Cuts -->
+      <div id="cuts-section" style="display:none" class="cuts-section">
+        <h4>✂ Cuts</h4>
+        <div style="max-height:300px;overflow-y:auto">
+          <table class="cuts-table"><thead><tr><th>#</th><th>Panel</th><th>Cut</th><th>Result 1</th><th>Result 2</th></tr></thead><tbody id="cuts-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====================== DATA MODEL ======================
+let panels = [];
+let stocks = [];
+let cfg = {};
+let results = null;
+let currentSheetIdx = 0;
+let selectedPartIdx = -1;
+let hoveredPartIdx = -1;
+let _drawing = false;
+
+function defaultCfg() {
+  return {
+    kerf: 3,
+    showLabels: true,
+    showDimensions: false,
+    allowRotation: true,
+    enableMaterials: false,
+    enableEdgeBanding: false,
+    groupSheets: true,
+    priority: 'balance',
+    unit: 'mm'
+  };
+}
+
+// ====================== UI HELPERS ======================
+function toggleSection(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.arrow');
+  body.classList.toggle('hidden');
+  arrow.classList.toggle('collapsed');
+}
+
+function toggleLabels() {
+  cfg.showLabels = document.getElementById('opt-labels').checked;
+  if (results) drawSheet(currentSheetIdx, results);
+}
+function toggleDimensions() {
+  cfg.showDimensions = document.getElementById('opt-dimensions').checked;
+  if (results) drawSheet(currentSheetIdx, results);
+}
+function toggleUnits() {
+  const newUnit = document.getElementById('opt-units').value;
+  const oldUnit = cfg.unit || 'mm';
+  cfg.unit = newUnit;
+  if (oldUnit !== newUnit) {
+    const factor = newUnit === 'cm' ? 1 / 10 : 10;
+    document.querySelectorAll('#panels-tbody .pw, #panels-tbody .ph, #stock-tbody .sw, #stock-tbody .sh').forEach(inp => {
+      if (inp.value) inp.value = (parseFloat(inp.value) * factor).toFixed(1).replace(/\.0$/, '');
+    });
+  }
+  if (results) { drawSheet(currentSheetIdx, results); updateStats(results); }
+}
+function fmt(v) {
+  return cfg.unit === 'cm' ? (v / 10).toFixed(1) : Math.round(v);
+}
+
+function toggleTheme() {
+  const isDark = document.getElementById('opt-theme').checked;
+  document.body.classList.toggle('light-theme', !isDark);
+  localStorage.setItem('cutlist_theme', isDark ? 'dark' : 'light');
+  if (results) drawSheet(currentSheetIdx, results);
+}
+
+function isLightTheme() {
+  return document.body.classList.contains('light-theme');
+}
+
+function showStatus(msg) {
+  const el = document.getElementById('status-message');
+  document.getElementById('status-text').textContent = msg;
+  el.classList.add('show');
+  document.getElementById('btn-calculate').disabled = true;
+}
+
+function hideStatus() {
+  document.getElementById('status-message').classList.remove('show');
+  document.getElementById('btn-calculate').disabled = false;
+}
+
+// ====================== PANEL TABLE ======================
+function addPanelRow(data) {
+  data = data || { width: '', height: '', qty: 1, label: '', material: '', rot: true };
+  const tbody = document.getElementById('panels-tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="number" class="pw" value="${data.width}" min="1" step="1" placeholder="w"></td>
+    <td><input type="number" class="ph" value="${data.height}" min="1" step="1" placeholder="h"></td>
+    <td><input type="number" class="pq" value="${data.qty}" min="1" step="1"></td>
+    <td><input type="text" class="pl" value="${data.label}" placeholder="label" style="font-size:11px"></td>
+    <td><input type="text" class="pm" value="${data.material}" placeholder="mat" style="font-size:11px"></td>
+    <td style="text-align:center"><input type="checkbox" class="pr" ${data.rot ? 'checked' : ''} style="margin:0"></td>
+    <td class="row-actions"><button class="del" onclick="this.closest('tr').remove()">×</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function addStockRow(data) {
+  data = data || { width: '', height: '', qty: 1, label: '' };
+  const tbody = document.getElementById('stock-tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="number" class="sw" value="${data.width}" min="1" step="1" placeholder="w"></td>
+    <td><input type="number" class="sh" value="${data.height}" min="1" step="1" placeholder="h"></td>
+    <td><input type="number" class="sq" value="${data.qty}" min="1" step="1"></td>
+    <td><input type="text" class="sl" value="${data.label}" placeholder="label" style="font-size:11px"></td>
+    <td class="row-actions"><button class="del" onclick="this.closest('tr').remove()">×</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+function addSamplePanels() {
+  const u = (document.getElementById('opt-units')?.value || 'mm') === 'cm' ? 10 : 1;
+  addPanelRow({ width: 600 / u, height: 400 / u, qty: 4, label: 'Door', material: 'Oak', rot: true });
+  addPanelRow({ width: 300 / u, height: 250 / u, qty: 8, label: 'Shelf', material: 'Oak', rot: true });
+  addPanelRow({ width: 200 / u, height: 100 / u, qty: 12, label: 'Drawer', material: 'Oak', rot: true });
+  addPanelRow({ width: 500 / u, height: 350 / u, qty: 2, label: 'Side', material: 'Walnut', rot: false });
+  addPanelRow({ width: 150 / u, height: 150 / u, qty: 6, label: 'Cube', material: 'Oak', rot: true });
+}
+
+function addSampleStock() {
+  const u = (document.getElementById('opt-units')?.value || 'mm') === 'cm' ? 10 : 1;
+  addStockRow({ width: 2440 / u, height: 1220 / u, qty: 3, label: 'Plywood' });
+}
+
+function readTableData() {
+  const u = document.getElementById('opt-units').value === 'cm' ? 10 : 1;
+  const p = [];
+  document.querySelectorAll('#panels-tbody tr').forEach(tr => {
+    const w = parseFloat(tr.querySelector('.pw').value) * u;
+    const h = parseFloat(tr.querySelector('.ph').value) * u;
+    const q = parseInt(tr.querySelector('.pq').value) || 1;
+    if (w > 0 && h > 0) {
+      p.push({ width: w, height: h, qty: q, label: tr.querySelector('.pl').value, material: tr.querySelector('.pm').value, rot: tr.querySelector('.pr').checked });
+    }
+  });
+  panels = p;
+
+  const s = [];
+  document.querySelectorAll('#stock-tbody tr').forEach(tr => {
+    const w = parseFloat(tr.querySelector('.sw').value) * u;
+    const h = parseFloat(tr.querySelector('.sh').value) * u;
+    const q = parseInt(tr.querySelector('.sq').value) || 1;
+    if (w > 0 && h > 0) {
+      s.push({ width: w, height: h, qty: q, label: tr.querySelector('.sl').value });
+    }
+  });
+  stocks = s;
+
+  cfg = {
+    kerf: parseFloat(document.getElementById('opt-kerf').value) || 0,
+    showLabels: document.getElementById('opt-labels').checked,
+    showDimensions: document.getElementById('opt-dimensions').checked,
+    unit: document.getElementById('opt-units').value,
+    allowRotation: true,
+    enableMaterials: document.getElementById('opt-materials').checked,
+    enableEdgeBanding: document.getElementById('opt-edgeband').checked,
+    groupSheets: document.getElementById('opt-group').checked,
+    priority: document.getElementById('opt-priority').value
+  };
+}
+
+// ====================== MAXRECTS BIN PACKING ======================
+function maxRectsPacking(parts, stockSheets, kerf, allowRotation, priority) {
+  const placedMosaics = [];
+  const noFit = [];
+  let partsList = [];
+
+  // Build individual part instances
+  parts.forEach((p, pi) => {
+    for (let i = 0; i < p.qty; i++) {
+      partsList.push({
+        id: pi,
+        w: p.width, h: p.height,
+        label: p.label, material: p.material,
+        rot: p.rot
+      });
+    }
+  });
+
+  // Sort by priority
+  const sortMap = {
+    material: (a, b) => (b.w * b.h) - (a.w * a.h),
+    cuts: (a, b) => Math.max(b.w, b.h) - Math.max(a.w, a.h),
+    balance: (a, b) => (b.w + b.h) - (a.w + a.h) || (b.w * b.h) - (a.w * a.h)
+  };
+  partsList.sort(sortMap[priority] || sortMap.balance);
+
+  // Expand stock sheets
+  const allSheets = [];
+  stockSheets.forEach(s => {
+    for (let i = 0; i < s.qty; i++) {
+      allSheets.push({ w: s.width, h: s.height, label: s.label });
+    }
+  });
+  allSheets.sort((a, b) => (b.w * b.h) - (a.w * a.h));
+
+  // Process each sheet
+  for (let si = 0; si < allSheets.length && partsList.length > 0; si++) {
+    const sheet = allSheets[si];
+    const freeRects = [{ x: 0, y: 0, w: sheet.w, h: sheet.h }];
+    const sheetParts = [];
+    const unplaced = [];
+
+    for (const part of partsList) {
+      const placed = placeMaxRects(part, freeRects, kerf, allowRotation);
+      if (placed) {
+        sheetParts.push(placed);
+      } else {
+        unplaced.push(part);
+      }
+    }
+
+    const totalArea = sheet.w * sheet.h;
+    const usedArea = sheetParts.reduce((sum, p) => sum + p.w * p.h, 0);
+    placedMosaics.push({
+      sheet,
+      parts: sheetParts,
+      totalArea, usedArea,
+      wastedArea: totalArea - usedArea,
+      usedRatio: totalArea > 0 ? usedArea / totalArea : 0
+    });
+
+    partsList = unplaced;
+  }
+
+  // Remaining = couldn't fit
+  const noFitMap = {};
+  partsList.forEach(p => {
+    const key = `${p.w}x${p.h}|${p.label}|${p.material}`;
+    if (noFitMap[key]) {
+      noFitMap[key].count++;
+    } else {
+      noFitMap[key] = { width: p.w, height: p.h, label: p.label, material: p.material, count: 1 };
+    }
+  });
+
+  return { mosaics: placedMosaics, noFit: Object.values(noFitMap) };
+}
+
+function placeMaxRects(part, freeRects, kerf, allowRotation) {
+  const pw = part.w + kerf;
+  const ph = part.h + kerf;
+
+  let bestIdx = -1;
+  let bestScore = Infinity;
+  let useRot = false;
+
+  for (let i = 0; i < freeRects.length; i++) {
+    const r = freeRects[i];
+    // Normal orientation
+    if (pw <= r.w && ph <= r.h) {
+      const score = bssf(pw, ph, r);
+      if (score < bestScore) { bestScore = score; bestIdx = i; useRot = false; }
+    }
+    // Rotated
+    if (allowRotation && part.rot !== false && ph <= r.w && pw <= r.h) {
+      const score = bssf(ph, pw, r);
+      if (score < bestScore) { bestScore = score; bestIdx = i; useRot = true; }
+    }
+  }
+
+  if (bestIdx < 0) return null;
+
+  const r = freeRects[bestIdx];
+  const placedW = useRot ? part.h : part.w;
+  const placedH = useRot ? part.w : part.h;
+  const pw2 = useRot ? ph : pw;
+  const ph2 = useRot ? pw : ph;
+
+  const placement = {
+    id: part.id,
+    x: r.x, y: r.y, w: placedW, h: placedH,
+    label: part.label, material: part.material,
+    rotated: useRot
+  };
+
+  // Split the rectangle (shelf split)
+  freeRects.splice(bestIdx, 1);
+
+  // Right rect (remaining width x placed height)
+  if (pw2 < r.w) {
+    freeRects.push({ x: r.x + pw2, y: r.y, w: r.w - pw2, h: ph2 });
+  }
+  // Top rect (full width x remaining height)
+  if (ph2 < r.h) {
+    freeRects.push({ x: r.x, y: r.y + ph2, w: r.w, h: r.h - ph2 });
+  }
+
+  // Prune: remove rects contained by others
+  pruneFreeRects(freeRects);
+
+  return placement;
+}
+
+function bssf(pw, ph, rect) {
+  const short = Math.min(rect.w - pw, rect.h - ph);
+  const long = Math.max(rect.w - pw, rect.h - ph);
+  return short * 10000 + long;
+}
+
+function pruneFreeRects(freeRects) {
+  for (let i = freeRects.length - 1; i >= 0; i--) {
+    const a = freeRects[i];
+    if (a.w <= 0 || a.h <= 0) { freeRects.splice(i, 1); continue; }
+    for (let j = freeRects.length - 1; j > i; j--) {
+      const b = freeRects[j];
+      // b contained in a?
+      if (b.x >= a.x && b.y >= a.y && b.x + b.w <= a.x + a.w && b.y + b.h <= a.y + a.h) {
+        freeRects.splice(j, 1);
+      }
+      // a contained in b?
+      else if (a.x >= b.x && a.y >= b.y && a.x + a.w <= b.x + b.w && a.y + a.h <= b.y + b.h) {
+        freeRects.splice(i, 1);
+        break;
+      }
+    }
+  }
+  // Merge adjacent compatible rects for cleaner output
+  let changed = true;
+  let iter = 0;
+  while (changed && iter++ < 50) {
+    changed = false;
+    for (let i = 0; i < freeRects.length; i++) {
+      for (let j = i + 1; j < freeRects.length; j++) {
+        const a = freeRects[i], b = freeRects[j];
+        if (a.y === b.y && a.h === b.h && (a.x + a.w === b.x || b.x + b.w === a.x)) {
+          freeRects[i] = { x: Math.min(a.x, b.x), y: a.y, w: a.w + b.w, h: a.h };
+          freeRects.splice(j, 1);
+          changed = true;
+          break;
+        }
+        if (a.x === b.x && a.w === b.w && (a.y + a.h === b.y || b.y + b.h === a.y)) {
+          freeRects[i] = { x: a.x, y: Math.min(a.y, b.y), w: a.w, h: a.h + b.h };
+          freeRects.splice(j, 1);
+          changed = true;
+          break;
+        }
+      }
+      if (changed) break;
+    }
+  }
+}
+
+// ====================== CUT DETECTION HELPER ======================
+function findCuts(parts, kerf) {
+  const cuts = [];
+  for (let i = 0; i < parts.length; i++) {
+    for (let j = i + 1; j < parts.length; j++) {
+      const a = parts[i], b = parts[j];
+      const gx = a.x + a.w + kerf, gxr = b.x + b.w + kerf;
+      const gy = a.y + a.h + kerf, gyr = b.y + b.h + kerf;
+      // Horizontal cut (vertical gap between left/right neighbors)
+      if (Math.abs(gx - b.x) < 0.1 && a.y < b.y + b.h && a.y + a.h > b.y) {
+        const overlap = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        cuts.push({ x: a.x + a.w, y1: Math.max(a.y, b.y), y2: Math.min(a.y + a.h, b.y + b.h), len: overlap, horizontal: true, a, b });
+      } else if (Math.abs(a.x - gxr) < 0.1 && a.y < b.y + b.h && a.y + a.h > b.y) {
+        const overlap = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+        cuts.push({ x: b.x + b.w, y1: Math.max(a.y, b.y), y2: Math.min(a.y + a.h, b.y + b.h), len: overlap, horizontal: true, a, b });
+      }
+      // Vertical cut (horizontal gap between top/bottom neighbors)
+      if (Math.abs(gy - b.y) < 0.1 && a.x < b.x + b.w && a.x + a.w > b.x) {
+        const overlap = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        cuts.push({ y: a.y + a.h, x1: Math.max(a.x, b.x), x2: Math.min(a.x + a.w, b.x + b.w), len: overlap, horizontal: false, a, b });
+      } else if (Math.abs(a.y - gyr) < 0.1 && a.x < b.x + b.w && a.x + a.w > b.x) {
+        const overlap = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+        cuts.push({ y: b.y + b.h, x1: Math.max(a.x, b.x), x2: Math.min(a.x + a.w, b.x + b.w), len: overlap, horizontal: false, a, b });
+      }
+    }
+  }
+  return cuts;
+}
+
+// ====================== CUT LINE HIGHLIGHT ======================
+function hoverCut(idx) {
+  const c = window._cutLines && window._cutLines[idx];
+  if (!c) return;
+  const line = c.el;
+  const len = c.len;
+  if (c.raf) cancelAnimationFrame(c.raf);
+  line.setAttribute('stroke-width', '5');
+  line.setAttribute('stroke-dasharray', len);
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min((now - start) / 500, 1);
+    const ease = t * (2 - t);
+    line.setAttribute('stroke-dashoffset', Math.round(len * (1 - ease)));
+    if (t < 1) c.raf = requestAnimationFrame(step);
+  }
+  c.raf = requestAnimationFrame(step);
+}
+function unhoverCut(idx) {
+  const c = window._cutLines && window._cutLines[idx];
+  if (!c) return;
+  const line = c.el;
+  if (c.raf) { cancelAnimationFrame(c.raf); c.raf = null; }
+  line.setAttribute('stroke-width', '1');
+  line.setAttribute('stroke-dasharray', '5,3');
+  line.removeAttribute('stroke-dashoffset');
+}
+
+// ====================== SVG RENDERING ======================
+const PART_COLORS = [
+  '#26a69a', '#42a5f5', '#ef5350', '#ab47bc', '#ff7043',
+  '#66bb6a', '#ffa726', '#78909c', '#ec407a', '#7e57c2',
+  '#26c6da', '#d4e157', '#ffca28', '#8d6e63', '#bdbdbd'
+];
+
+function drawResults(results) {
+  const canvas = document.getElementById('svg-canvas');
+  const rightPanel = document.getElementById('right-panel');
+
+  if (!results || results.mosaics.length === 0) {
+    canvas.innerHTML = '<div class="empty-state">Add panels and stock sheets, then click Calculate</div>';
+    rightPanel.classList.remove('show');
+    return;
+  }
+
+  rightPanel.classList.add('show');
+  updateStats(results);
+  drawSheet(currentSheetIdx, results);
+
+  // Sheet nav
+  const nav = document.getElementById('sheet-nav');
+  if (results.mosaics.length > 1) {
+    nav.style.display = 'flex';
+    updateSheetNav(results);
+  } else {
+    nav.style.display = 'none';
+  }
+}
+
+function drawSheet(idx, results) {
+  const canvas = document.getElementById('svg-canvas');
+  if (!results || idx >= results.mosaics.length) return;
+  if (_drawing) return;
+  _drawing = true;
+
+  if (!canvas._hoverInit) {
+    canvas._hoverInit = true;
+    canvas.addEventListener('mousemove', e => {
+      const target = document.elementFromPoint(e.clientX, e.clientY);
+      const pi = target && target.closest('[data-pi]')?.getAttribute('data-pi');
+      const newIdx = pi != null ? parseInt(pi) : -1;
+      if (newIdx !== hoveredPartIdx) {
+        hoveredPartIdx = newIdx;
+        drawSheet(currentSheetIdx, results);
+      }
+    });
+  }
+
+  const mosaic = results.mosaics[idx];
+  const sheet = mosaic.sheet;
+  const parts = mosaic.parts;
+
+  const mL = 70, mT = 70, mR = 14, mB = 70;
+  const vbW = sheet.w + mL + mR;
+  const vbH = sheet.h + mT + mB;
+
+  canvas.innerHTML = '';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${vbW} ${vbH}`);
+  svg.setAttribute('preserveAspectRatio', 'xMinYMin meet');
+  svg.style.display = 'block';
+  svg.style.width = '100%';
+  svg.style.height = '100%';
+  canvas.appendChild(svg);
+
+  // Measure actual on-screen scale to size fonts in readable pixels
+  const availPx = Math.max(canvas.clientWidth || 0, canvas.parentElement?.clientWidth || 0, 600);
+  const pxPerUnit = availPx / vbW;
+  // Minimum sizes in screen pixels
+  const MIN_LABEL_PX = 14, MIN_DIM_PX = 13, MIN_TITLE_PX = 16, MIN_LEGEND_PX = 13;
+
+  const light = isLightTheme();
+  const sheetBg = light ? '#f0f0f0' : '#1e2d35';
+  const sheetStroke = light ? '#e0e0e0' : '#455a64';
+  const gridStroke = light ? '#ddd' : '#2a3a42';
+
+  // Defs
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const pat = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  pat.setAttribute('id', 'g'); pat.setAttribute('width', '20'); pat.setAttribute('height', '20');
+  pat.setAttribute('patternUnits', 'userSpaceOnUse');
+  const pp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pp.setAttribute('d', 'M 20 0 L 0 0 0 20');
+  pp.setAttribute('stroke', gridStroke); pp.setAttribute('stroke-width', '0.3'); pp.setAttribute('fill', 'none');
+  pat.appendChild(pp); defs.appendChild(pat);
+  const filt = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+  filt.setAttribute('id', 'sh');
+  const dr = document.createElementNS('http://www.w3.org/2000/svg', 'feDropShadow');
+  dr.setAttribute('dx', '2'); dr.setAttribute('dy', '2'); dr.setAttribute('stdDeviation', '1'); dr.setAttribute('flood-opacity', '.3');
+  filt.appendChild(dr); defs.appendChild(filt);
+  svg.appendChild(defs);
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  g.setAttribute('transform', `translate(${mL}, ${mT})`);
+  svg.appendChild(g);
+
+  function fs(px) { return Math.round(px / pxPerUnit); }
+  function el(tag, attrs) {
+    const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    g.appendChild(e); return e;
+  }
+
+  // Sheet bg
+  const bg = el('rect', { width: sheet.w, height: sheet.h, fill: sheetBg, stroke: sheetStroke, 'stroke-width': '2' });
+  bg.style.cursor = 'default';
+  bg.addEventListener('click', e => { e.stopPropagation(); if (selectedPartIdx !== -1) { selectedPartIdx = -1; drawSheet(idx, results); } });
+  el('rect', { width: sheet.w, height: sheet.h, fill: 'url(#g)' });
+
+  // Parts
+  const cm = {};
+  const dimFs = fs(MIN_DIM_PX);
+  parts.forEach((p, pi) => {
+    const ci = p.id % PART_COLORS.length;
+    if (!cm[p.id]) cm[p.id] = PART_COLORS[ci];
+    const pr = el('rect', { x: p.x, y: p.y, width: p.w, height: p.h, fill: cm[p.id], opacity: '.85', filter: 'url(#sh)', rx: '1' });
+    pr.setAttribute('data-pi', pi);
+    pr.style.cursor = 'pointer';
+    pr.addEventListener('click', e => {
+      e.stopPropagation();
+      const newIdx = selectedPartIdx === pi ? -1 : pi;
+      selectedPartIdx = newIdx;
+      drawSheet(idx, results);
+    });
+
+    if (cfg.showLabels) {
+      const minDim = Math.min(p.w, p.h);
+      const minLabel = fs(MIN_LABEL_PX);
+      const propLabel = Math.round(minDim * 0.14);
+      const f1 = Math.max(minLabel, Math.min(propLabel, fs(28)));
+      const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
+      const t = el('text', { x: cx, y: cy + Math.round(f1 * 0.3), fill: '#fff', 'text-anchor': 'middle', 'font-weight': '600' });
+      t.setAttribute('font-size', f1); t.setAttribute('font-family', '-apple-system, sans-serif');
+      t.textContent = p.label || `${fmt(p.w)}×${fmt(p.h)}`;
+      if (p.label) {
+        const f2 = Math.max(fs(11), f1 - fs(3));
+        const t2 = el('text', { x: cx, y: cy + f1 + Math.round(f2 * 0.3), fill: '#fff', 'text-anchor': 'middle', opacity: '.75' });
+        t2.setAttribute('font-size', f2); t2.setAttribute('font-family', '-apple-system, sans-serif');
+        t2.textContent = `${fmt(p.w)}×${fmt(p.h)}${p.rotated ? ' ↻' : ''}`;
+      }
+    }
+    if (cfg.showDimensions) {
+      const dg = 16;
+      const dwy = p.y + dg;
+      const dwt = el('text', { x: p.x + p.w / 2, y: dwy + dimFs * 0.4, fill: '#ffd54f', 'text-anchor': 'middle' });
+      dwt.setAttribute('font-size', dimFs); dwt.setAttribute('font-family', '-apple-system, sans-serif');
+      dwt.textContent = fmt(p.w);
+      const dhx = p.x + dg;
+      const dht = el('text', { x: dhx + dimFs * 0.5, y: p.y + p.h / 2, fill: '#ffd54f', 'text-anchor': 'middle' });
+      dht.setAttribute('font-size', dimFs); dht.setAttribute('font-family', '-apple-system, sans-serif');
+      dht.setAttribute('transform', `rotate(-90, ${dhx + dimFs * 0.5}, ${p.y + p.h / 2})`);
+      dht.textContent = fmt(p.h);
+    }
+    if (selectedPartIdx === pi) {
+      const gap = 12;
+      // Highlight
+      el('rect', { x: p.x - 2, y: p.y - 2, width: p.w + 4, height: p.h + 4, fill: 'none', stroke: '#ffd54f', 'stroke-width': '2', 'stroke-dasharray': '6,3', rx: '2' });
+      // Width dimension (inside top)
+      const wy = p.y + gap;
+      el('line', { x1: p.x, y1: wy, x2: p.x + p.w, y2: wy, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      el('line', { x1: p.x, y1: wy - 4, x2: p.x, y2: wy + 4, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      el('line', { x1: p.x + p.w, y1: wy - 4, x2: p.x + p.w, y2: wy + 4, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      const wt2 = el('text', { x: p.x + p.w / 2, y: wy + dimFs * 0.5, fill: '#ffd54f', 'text-anchor': 'middle' });
+      wt2.setAttribute('font-size', dimFs); wt2.setAttribute('font-family', '-apple-system, sans-serif');
+      wt2.textContent = fmt(p.w);
+      // Height dimension (inside left)
+      const hx = p.x + gap;
+      el('line', { x1: hx, y1: p.y, x2: hx, y2: p.y + p.h, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      el('line', { x1: hx - 4, y1: p.y, x2: hx + 4, y2: p.y, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      el('line', { x1: hx - 4, y1: p.y + p.h, x2: hx + 4, y2: p.y + p.h, stroke: '#ffd54f', 'stroke-width': '0.8' });
+      const ht2 = el('text', { x: hx + dimFs * 0.7, y: p.y + p.h / 2, fill: '#ffd54f', 'text-anchor': 'middle' });
+      ht2.setAttribute('font-size', dimFs); ht2.setAttribute('font-family', '-apple-system, sans-serif');
+      ht2.setAttribute('transform', `rotate(-90, ${hx + dimFs * 0.7}, ${p.y + p.h / 2})`);
+      ht2.textContent = fmt(p.h);
+    }
+  });
+
+  // Cut lines
+  window._cutLines = [];
+  const cuts = findCuts(parts, cfg.kerf || 0);
+  cuts.forEach((c, i) => {
+    const len = c.horizontal ? Math.abs(c.y2 - c.y1) : Math.abs(c.x2 - c.x1);
+    const line = c.horizontal
+      ? el('line', { x1: c.x, y1: c.y1, x2: c.x, y2: c.y2, stroke: '#ff5722', 'stroke-width': '1', 'stroke-dasharray': '5,3' })
+      : el('line', { x1: c.x1, y1: c.y, x2: c.x2, y2: c.y, stroke: '#ff5722', 'stroke-width': '1', 'stroke-dasharray': '5,3' });
+    window._cutLines.push({ el: line, len });
+  });
+
+  // Width dim (stock sheet or hovered panel)
+  const hp = hoveredPartIdx !== -1 ? parts[hoveredPartIdx] : null;
+  const dy = sheet.h + 12;
+  const wColor = '#ff5722';
+  const hColor = '#ff5722';
+  if (hp) {
+    const px = hp.x, pw = hp.w;
+    el('line', { x1: px, y1: dy, x2: px + pw, y2: dy, stroke: wColor, 'stroke-width': '1.5' });
+    el('line', { x1: px, y1: dy - 5, x2: px, y2: dy + 5, stroke: wColor, 'stroke-width': '1.5' });
+    el('line', { x1: px + pw, y1: dy - 5, x2: px + pw, y2: dy + 5, stroke: wColor, 'stroke-width': '1.5' });
+    const wt = el('text', { x: px + pw / 2, y: dy + Math.round(dimFs * 1.2), fill: wColor, 'text-anchor': 'middle' });
+    wt.setAttribute('font-size', dimFs); wt.setAttribute('font-family', '-apple-system, sans-serif'); wt.textContent = fmt(hp.w);
+    const py = hp.y, ph = hp.h;
+    el('line', { x1: -12, y1: py, x2: -12, y2: py + ph, stroke: hColor, 'stroke-width': '1.5' });
+    el('line', { x1: -16, y1: py, x2: -8, y2: py, stroke: hColor, 'stroke-width': '1.5' });
+    el('line', { x1: -16, y1: py + ph, x2: -8, y2: py + ph, stroke: hColor, 'stroke-width': '1.5' });
+    const ht = el('text', { x: -20, y: py + ph / 2, fill: hColor, 'text-anchor': 'middle' });
+    ht.setAttribute('font-size', dimFs); ht.setAttribute('font-family', '-apple-system, sans-serif');
+    ht.setAttribute('transform', `rotate(-90, ${-20}, ${py + ph / 2})`);
+    ht.textContent = fmt(hp.h);
+  } else {
+    el('line', { x1: 0, y1: dy, x2: sheet.w, y2: dy, stroke: wColor, 'stroke-width': '1.5' });
+    el('line', { x1: 0, y1: dy - 5, x2: 0, y2: dy + 5, stroke: wColor, 'stroke-width': '1.5' });
+    el('line', { x1: sheet.w, y1: dy - 5, x2: sheet.w, y2: dy + 5, stroke: wColor, 'stroke-width': '1.5' });
+    const wt = el('text', { x: sheet.w / 2, y: dy + Math.round(dimFs * 1.2), fill: wColor, 'text-anchor': 'middle' });
+    wt.setAttribute('font-size', dimFs); wt.setAttribute('font-family', '-apple-system, sans-serif'); wt.textContent = fmt(sheet.w);
+    el('line', { x1: -12, y1: 0, x2: -12, y2: sheet.h, stroke: hColor, 'stroke-width': '1.5' });
+    el('line', { x1: -16, y1: 0, x2: -8, y2: 0, stroke: hColor, 'stroke-width': '1.5' });
+    el('line', { x1: -16, y1: sheet.h, x2: -8, y2: sheet.h, stroke: hColor, 'stroke-width': '1.5' });
+    const ht = el('text', { x: -20, y: sheet.h / 2, fill: hColor, 'text-anchor': 'middle' });
+    ht.setAttribute('font-size', dimFs); ht.setAttribute('font-family', '-apple-system, sans-serif');
+    ht.setAttribute('transform', `rotate(-90, ${-20}, ${sheet.h / 2})`);
+    ht.textContent = fmt(sheet.h);
+  }
+
+
+
+
+  _drawing = false;
+}
+
+// ====================== STATISTICS ======================
+function updateStats(results) {
+  if (!results || results.mosaics.length === 0) return;
+
+  const mosaic = results.mosaics[currentSheetIdx];
+  const allMosaics = results.mosaics;
+
+  // Calculate cuts per mosaic
+  allMosaics.forEach(m => {
+    const cuts = findCuts(m.parts, cfg.kerf || 0);
+    m.cutsTotal = cuts.length;
+    m.cutLength = cuts.reduce((sum, c) => sum + c.len, 0);
+  });
+
+  // Overall stats
+  const totalArea = allMosaics.reduce((s, m) => s + m.totalArea, 0);
+  const totalUsed = allMosaics.reduce((s, m) => s + m.usedArea, 0);
+  const totalWasted = totalArea - totalUsed;
+
+  const statsGrid = document.getElementById('stats-grid');
+  statsGrid.innerHTML = `
+    <span class="label">Sheets Used</span><span class="value">${allMosaics.length}</span>
+    <span class="label">Used Area</span><span class="value">${totalUsed.toFixed(0)} <span class="sub">(${(totalUsed / totalArea * 100).toFixed(1)}%)</span></span>
+    <span class="label">Wasted Area</span><span class="value">${totalWasted.toFixed(0)} <span class="sub">(${(totalWasted / totalArea * 100).toFixed(1)}%)</span></span>
+    <span class="label">Total Cuts</span><span class="value">${allMosaics.reduce((s, m) => s + (m.cutsTotal || 0), 0)}</span>
+    <span class="label">Total Cut Length</span><span class="value">${fmt(allMosaics.reduce((s, m) => s + (m.cutLength || 0), 0))}</span>
+  `;
+  document.getElementById('overall-stats').style.display = 'block';
+
+  // Sheet stats
+  const usedArea = mosaic.usedArea;
+  const wastedArea = mosaic.wastedArea;
+  const usedRatio = mosaic.usedRatio;
+  const sheetStats = document.getElementById('sheet-stats-grid');
+  const nbrPanels = mosaic.parts.length;
+  const nbrCuts = mosaic.cutsTotal || 0;
+  const cutLen = mosaic.cutLength || 0;
+
+  sheetStats.innerHTML = `
+    <span class="label">Stock Panel</span><span class="value">${mosaic.sheet.label || `Sheet ${currentSheetIdx + 1}`} (${fmt(mosaic.sheet.w)}×${fmt(mosaic.sheet.h)})</span>
+    <span class="label">Used Area</span><span class="value">${usedArea.toFixed(0)} <span class="sub">(${(usedRatio * 100).toFixed(1)}%)</span></span>
+    <span class="label">Wasted Area</span><span class="value">${wastedArea.toFixed(0)} <span class="sub">(${((1 - usedRatio) * 100).toFixed(1)}%)</span></span>
+    <span class="label">Panels</span><span class="value">${nbrPanels}</span>
+    <span class="label">Cuts</span><span class="value">${nbrCuts}</span>
+    <span class="label">Cut Length</span><span class="value">${fmt(cutLen)}</span>
+  `;
+  document.getElementById('sheet-stats').style.display = 'block';
+
+  // No-fit panels
+  const noFitBody = document.getElementById('no-fit-body');
+  const noFitSection = document.getElementById('no-fit-section');
+  if (results.noFit && results.noFit.length > 0) {
+    noFitSection.style.display = 'block';
+    noFitBody.innerHTML = results.noFit.map(nf => `
+      <tr><td>${fmt(nf.width)}×${fmt(nf.height)}</td><td>${nf.label || '-'}</td><td>${nf.count}</td></tr>
+    `).join('');
+  } else {
+    noFitSection.style.display = 'none';
+  }
+
+  // Cuts list
+  const cutsBody = document.getElementById('cuts-body');
+  const cutsSection = document.getElementById('cuts-section');
+  if (nbrCuts > 0) {
+    cutsSection.style.display = 'block';
+    const rawCuts = findCuts(mosaic.parts, cfg.kerf || 0);
+    const cuts = rawCuts.map(c => ({
+      panelA: `${fmt(c.a.w)}×${fmt(c.a.h)}${c.a.label ? ' ' + c.a.label : ''}`,
+      panelB: `${fmt(c.b.w)}×${fmt(c.b.h)}${c.b.label ? ' ' + c.b.label : ''}`,
+      coord: c.horizontal ? c.x : c.y,
+      horizontal: c.horizontal,
+      length: c.len
+    }));
+    cutsBody.innerHTML = cuts.map((c, i) => `
+      <tr onmouseenter="hoverCut(${i})" onmouseleave="unhoverCut(${i})" style="cursor:pointer">
+        <td>${i + 1}</td>
+        <td>${c.panelA}</td>
+        <td>${c.horizontal ? 'x=' : 'y='}${fmt(c.coord)}</td>
+        <td>${c.panelA}</td>
+        <td>${c.panelB}</td>
+      </tr>
+    `).join('');
+  } else {
+    cutsSection.style.display = 'none';
+  }
+
+  updateSheetNav(results);
+}
+
+function updateSheetNav(results) {
+  document.getElementById('sheet-indicator').textContent = `${currentSheetIdx + 1} / ${results.mosaics.length}`;
+}
+
+function nextSheet() {
+  if (results && currentSheetIdx < results.mosaics.length - 1) {
+    currentSheetIdx++;
+    hoveredPartIdx = -1;
+    drawSheet(currentSheetIdx, results);
+    updateStats(results);
+  }
+}
+
+function prevSheet() {
+  if (results && currentSheetIdx > 0) {
+    currentSheetIdx--;
+    hoveredPartIdx = -1;
+    drawSheet(currentSheetIdx, results);
+    updateStats(results);
+  }
+}
+
+// ====================== CALCULATION ======================
+function calculate() {
+  readTableData();
+
+  if (panels.length === 0) {
+    alert('Add at least one panel.');
+    return;
+  }
+  if (stocks.length === 0) {
+    alert('Add at least one stock sheet.');
+    return;
+  }
+
+  showStatus('Optimizing layout...');
+
+  setTimeout(() => {
+    try {
+      const parts = panels.map(p => ({ ...p }));
+      const result = maxRectsPacking(parts, stocks, cfg.kerf, cfg.allowRotation, cfg.priority);
+
+      // Group identical mosaics
+      if (cfg.groupSheets && result.mosaics.length > 1) {
+        result.mosaics = groupMosaics(result.mosaics);
+      }
+
+      results = result;
+      currentSheetIdx = 0;
+      hoveredPartIdx = -1;
+      drawResults(results);
+      hideStatus();
+    } catch (e) {
+      console.error(e);
+      hideStatus();
+      alert('Calculation error: ' + e.message);
+    }
+  }, 50);
+}
+
+function groupMosaics(mosaics) {
+  // Group identical layouts
+  const groups = [];
+  const used = new Set();
+
+  for (let i = 0; i < mosaics.length; i++) {
+    if (used.has(i)) continue;
+    const group = [mosaics[i]];
+    used.add(i);
+    for (let j = i + 1; j < mosaics.length; j++) {
+      if (used.has(j)) continue;
+      if (mosaicsAreEqual(mosaics[i], mosaics[j])) {
+        group.push(mosaics[j]);
+        used.add(j);
+      }
+    }
+    groups.push({
+      ...mosaics[i],
+      occurrences: group.length,
+      totalArea: mosaics[i].totalArea * group.length,
+      usedArea: mosaics[i].usedArea * group.length,
+      wastedArea: mosaics[i].wastedArea * group.length
+    });
+  }
+  return groups;
+}
+
+function mosaicsAreEqual(a, b) {
+  if (a.parts.length !== b.parts.length) return false;
+  const sortKey = p => `${p.x},${p.y},${p.w},${p.h},${p.id}`;
+  const aSorted = [...a.parts].sort((x, y) => sortKey(x).localeCompare(sortKey(y)));
+  const bSorted = [...b.parts].sort((x, y) => sortKey(x).localeCompare(sortKey(y)));
+  return aSorted.every((p, i) => sortKey(p) === sortKey(bSorted[i]));
+}
+
+// ====================== PERSISTENCE ======================
+function saveToLocalStorage() {
+  readTableData();
+  const data = { panels, stocks, cfg };
+  localStorage.setItem('cutlist_data', JSON.stringify(data));
+  alert('Saved to browser storage.');
+}
+
+function loadFromLocalStorage() {
+  const raw = localStorage.getItem('cutlist_data');
+  if (!raw) { alert('No saved data found.'); return; }
+  const data = JSON.parse(raw);
+  panels = data.panels || [];
+  stocks = data.stocks || [];
+  cfg = data.cfg || defaultCfg();
+
+  // Rebuild tables
+  document.getElementById('panels-tbody').innerHTML = '';
+  document.getElementById('stock-tbody').innerHTML = '';
+  panels.forEach(p => addPanelRow(p));
+  stocks.forEach(s => addStockRow(s));
+
+  // Options
+  document.getElementById('opt-kerf').value = cfg.kerf || 0;
+  document.getElementById('opt-labels').checked = cfg.showLabels !== false;
+  document.getElementById('opt-dimensions').checked = cfg.showDimensions === true;
+  document.getElementById('opt-units').value = cfg.unit || 'mm';
+  if (cfg.unit === 'cm') {
+    document.querySelectorAll('#panels-tbody .pw, #panels-tbody .ph, #stock-tbody .sw, #stock-tbody .sh').forEach(inp => {
+      if (inp.value) inp.value = (parseFloat(inp.value) / 10).toFixed(1).replace(/\.0$/, '');
+    });
+  }
+  document.getElementById('opt-materials').checked = cfg.enableMaterials || false;
+  document.getElementById('opt-edgeband').checked = cfg.enableEdgeBanding || false;
+  document.getElementById('opt-group').checked = cfg.groupSheets !== false;
+  document.getElementById('opt-priority').value = cfg.priority || 'balance';
+
+  results = null;
+  currentSheetIdx = 0;
+  drawResults(null);
+}
+
+function resetAll() {
+  if (!confirm('Reset all data?')) return;
+  panels = [];
+  stocks = [];
+  cfg = defaultCfg();
+  results = null;
+  currentSheetIdx = 0;
+  document.getElementById('panels-tbody').innerHTML = '';
+  document.getElementById('stock-tbody').innerHTML = '';
+  document.getElementById('opt-kerf').value = 3;
+  document.getElementById('opt-labels').checked = true;
+  document.getElementById('opt-dimensions').checked = false;
+  document.getElementById('opt-units').value = 'mm';
+  document.getElementById('opt-materials').checked = false;
+  document.getElementById('opt-edgeband').checked = false;
+  document.getElementById('opt-group').checked = true;
+  document.getElementById('opt-priority').value = 'balance';
+  drawResults(null);
+}
+
+// ====================== INIT ======================
+function init() {
+  // Restore theme
+  const theme = localStorage.getItem('cutlist_theme');
+  const isDark = theme !== 'light';
+  document.getElementById('opt-theme').checked = isDark;
+  document.body.classList.toggle('light-theme', !isDark);
+
+  // Add default rows
+  addSamplePanels();
+  addSampleStock();
+  cfg = defaultCfg();
+  drawResults(null);
+}
+
+init();
+
+// Responsive resize
+let ro;
+if (window.ResizeObserver) {
+  ro = new ResizeObserver(() => { if (results) drawSheet(currentSheetIdx, results); });
+  window.addEventListener('load', () => {
+    const c = document.getElementById('svg-canvas');
+    if (c) ro.observe(c);
+  });
+}
+
+// Sidebar resize
+(function() {
+  const handle = document.getElementById('sidebar-resize-handle');
+  const sidebar = document.getElementById('sidebar');
+  if (!handle || !sidebar) return;
+  let dragging = false;
+  handle.addEventListener('mousedown', e => {
+    dragging = true; handle.classList.add('active');
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const w = Math.max(260, Math.min(600, e.clientX));
+    document.documentElement.style.setProperty('--sidebar-width', w + 'px');
+    if (ro) ro.disconnect();
+    setTimeout(() => { if (ro) ro.observe(document.getElementById('svg-canvas')); }, 50);
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false; handle.classList.remove('active');
+  });
+})();
+</script>
+</body>
+</html>
