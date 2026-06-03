@@ -919,21 +919,8 @@ function drawSheet(idx, results) {
   if (!results || idx >= results.mosaics.length) return;
   if (_drawing) return;
   _drawing = true;
-
-  if (!canvas._hoverInit) {
-    canvas._hoverInit = true;
-    canvas.addEventListener('mousemove', e => {
-      const target = document.elementFromPoint(e.clientX, e.clientY);
-      const pi = target && target.closest('[data-pi]')?.getAttribute('data-pi');
-      const newIdx = pi != null ? parseInt(pi) : -1;
-      if (newIdx !== hoveredPartIdx) {
-        hoveredPartIdx = newIdx;
-        drawSheet(currentSheetIdx, results);
-      }
-    });
-  }
-
-  const mosaic = results.mosaics[idx];
+  try {
+    const mosaic = results.mosaics[idx];
   const sheet = mosaic.sheet;
   const parts = mosaic.parts;
 
@@ -1018,11 +1005,13 @@ function drawSheet(idx, results) {
       const cx = p.x + p.w / 2, cy = p.y + p.h / 2;
       const t = el('text', { x: cx, y: cy + Math.round(f1 * 0.3), fill: '#fff', 'text-anchor': 'middle', 'font-weight': '600' });
       t.setAttribute('font-size', f1); t.setAttribute('font-family', '-apple-system, sans-serif');
+      t.style.pointerEvents = 'none';
       t.textContent = p.label || `${fmt(p.w)}×${fmt(p.h)}`;
       if (p.label) {
         const f2 = Math.max(fs(11), f1 - fs(3));
         const t2 = el('text', { x: cx, y: cy + f1 + Math.round(f2 * 0.3), fill: '#fff', 'text-anchor': 'middle', opacity: '.75' });
         t2.setAttribute('font-size', f2); t2.setAttribute('font-family', '-apple-system, sans-serif');
+        t2.style.pointerEvents = 'none';
         t2.textContent = `${fmt(p.w)}×${fmt(p.h)}${p.rotated ? ' ↻' : ''}`;
       }
     }
@@ -1031,11 +1020,13 @@ function drawSheet(idx, results) {
       const dwy = p.y + dg;
       const dwt = el('text', { x: p.x + p.w / 2, y: dwy + dimFs * 0.4, fill: '#ffd54f', 'text-anchor': 'middle' });
       dwt.setAttribute('font-size', dimFs); dwt.setAttribute('font-family', '-apple-system, sans-serif');
+      dwt.style.pointerEvents = 'none';
       dwt.textContent = fmt(p.w);
       const dhx = p.x + dg;
       const dht = el('text', { x: dhx + dimFs * 0.5, y: p.y + p.h / 2, fill: '#ffd54f', 'text-anchor': 'middle' });
       dht.setAttribute('font-size', dimFs); dht.setAttribute('font-family', '-apple-system, sans-serif');
       dht.setAttribute('transform', `rotate(-90, ${dhx + dimFs * 0.5}, ${p.y + p.h / 2})`);
+      dht.style.pointerEvents = 'none';
       dht.textContent = fmt(p.h);
     }
     if (selectedPartIdx === pi) {
@@ -1111,7 +1102,7 @@ function drawSheet(idx, results) {
 
 
 
-  _drawing = false;
+  } finally { _drawing = false; }
 }
 
 // ====================== STATISTICS ======================
@@ -1210,6 +1201,7 @@ function updateSheetNav(results) {
 function nextSheet() {
   if (results && currentSheetIdx < results.mosaics.length - 1) {
     currentSheetIdx++;
+    selectedPartIdx = -1;
     hoveredPartIdx = -1;
     drawSheet(currentSheetIdx, results);
     updateStats(results);
@@ -1219,6 +1211,7 @@ function nextSheet() {
 function prevSheet() {
   if (results && currentSheetIdx > 0) {
     currentSheetIdx--;
+    selectedPartIdx = -1;
     hoveredPartIdx = -1;
     drawSheet(currentSheetIdx, results);
     updateStats(results);
@@ -1252,6 +1245,7 @@ function calculate() {
 
       results = result;
       currentSheetIdx = 0;
+      selectedPartIdx = -1;
       hoveredPartIdx = -1;
       drawResults(results);
       hideStatus();
@@ -1376,6 +1370,21 @@ function init() {
 }
 
 init();
+
+// Hover handler (set up once on the persistent canvas, uses globals)
+(function() {
+  const canvas = document.getElementById('svg-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('mousemove', e => {
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    const pi = target && target.closest('[data-pi]')?.getAttribute('data-pi');
+    const newIdx = pi != null ? parseInt(pi) : -1;
+    if (newIdx !== hoveredPartIdx) {
+      hoveredPartIdx = newIdx;
+      if (results) drawSheet(currentSheetIdx, results);
+    }
+  });
+})();
 
 // Responsive resize
 let ro;
